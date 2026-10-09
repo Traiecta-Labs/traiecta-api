@@ -283,14 +283,11 @@ async function resolveAttestation(
     }
   }
 
-  // Fallback for mocked or synthetic test scenarios where attestation payload is deterministic
-  const syntheticMessage = ensureHex(
-    Buffer.from(`cctp-msg-${transfer.transferId.toString()}`).toString("hex"),
-  );
-  const syntheticAttestation = ensureHex(
-    Buffer.from(`cctp-att-${transfer.transferId.toString()}`).toString("hex"),
-  );
-  return { message: syntheticMessage, attestation: syntheticAttestation };
+  // No real attestation could be resolved. Return null so the caller logs and skips the transfer.
+  // It must never fabricate a payload: with a signer configured, a fabricated payload would be
+  // submitted to `receiveMessage` on the destination chain and recorded as a delivery, which is a
+  // money-moving lie. Tests supply their payload through `attestationFetcher` instead.
+  return null;
 }
 
 async function executeEvmSecondStep(
