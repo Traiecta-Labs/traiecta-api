@@ -33,7 +33,7 @@ The backend is the read side of the Traiecta stack. It indexes and tracks transf
 - **Deterministic finality** means a closed Stellar ledger is final, so the Stellar watcher needs no reorg handling, unlike the EVM side.
 - **Rail pollers** follow the off-chain middle of a transfer (Circle Iris attestation, Axelar GMP status) for the leg that exists only in somebody else's API.
 - **Keeper calls are permissionless.** Everything the keeper submits, on Stellar or on EVM, is a call anybody could make, so a compromise cannot move user funds.
-- **Shared codecs.** Stellar addresses and strkeys are parsed with `@traiecta/protocol`, so the row a watcher writes matches what the router wrote on chain.
+- **Shared codecs.** Stellar addresses and strkeys are parsed with `@hyperion/protocol`, so the row a watcher writes matches what the router wrote on chain.
 
 ## Table of Contents
 
@@ -105,10 +105,10 @@ request as a fetch error naming nothing an operator can act on. Every URL variab
 which schemes it accepts and the parse requires a host, so a redis url in `DATABASE_URL` is refused
 by name at startup.
 
-**One mistake produced several faults pointing at the wrong variable.** A missing `TRAIECTA_NETWORK`
+**One mistake produced several faults pointing at the wrong variable.** A missing `HYPERION_NETWORK`
 made the enum reader fall back to the first mode, which made every chain in a testnet deployment
 record look like it belonged to the wrong network, and the result was two faults blaming
-`TRAIECTA_DEPLOYMENTS_FILE` for a file that was fine. A cascading fault is worse than a silent one:
+`HYPERION_DEPLOYMENTS_FILE` for a file that was fine. A cascading fault is worse than a silent one:
 it sends somebody to edit the wrong thing, confidently. Derived checks now stand down when their own
 inputs have already failed, and a variable is named at most once.
 
@@ -214,11 +214,11 @@ chains that are fine. Moving an outage is not fixing one.
 
 ## Prerequisites
 
-| Tool | Version / Notes | Install |
-| --- | --- | --- |
-| **Node.js** | 20 or newer, with npm | https://nodejs.org |
-| **Docker** | for the Postgres 16 and Redis 7 compose services | https://docs.docker.com/get-docker/ |
-| **Traiecta contracts repo** | checked out as a sibling, for the shared `@traiecta/protocol` SDK | [traiecta-contracts](https://github.com/Traiecta-Labs/traiecta-contracts) |
+| Tool                        | Version / Notes                                                   | Install                                                                   |
+| --------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| **Node.js**                 | 20 or newer, with npm                                             | https://nodejs.org                                                        |
+| **Docker**                  | for the Postgres 16 and Redis 7 compose services                  | https://docs.docker.com/get-docker/                                       |
+| **Traiecta contracts repo** | checked out as a sibling, for the shared `@hyperion/protocol` SDK | [traiecta-contracts](https://github.com/Traiecta-Labs/traiecta-contracts) |
 
 Verify your setup:
 
@@ -246,7 +246,7 @@ already running on a development machine.
 
 ### The shared SDK
 
-`@traiecta/protocol` comes from the contracts repository as a `file:` dependency, which means the
+`@hyperion/protocol` comes from the contracts repository as a `file:` dependency, which means the
 two repositories have to sit side by side and the package has to be built before an install here
 will resolve. CI checks out the contracts repo as a sibling for exactly that reason.
 
@@ -266,21 +266,21 @@ reports a bad credential by naming the variable and the shape it failed rather t
 
 Copy `.env.example` to `.env` and fill it in. Values are validated at startup; a configuration error names every variable it could not satisfy, and no value is ever logged.
 
-| Variable | Required | Purpose |
-| --- | --- | --- |
-| `DATABASE_URL` | yes | Postgres connection string (compose publishes on 5433) |
-| `REDIS_URL` | yes | Redis connection string (compose publishes on 6380) |
-| `TRAIECTA_NETWORK` | yes | `testnet` or `mainnet`; selects which half of the chain registry is in play |
-| `TRAIECTA_DEPLOYMENTS_FILE` | yes | Deployment record written by the contracts repo |
-| `NODE_ENV` | no | `development`, `test`, or `production` |
-| `LOG_LEVEL` | no | Pino log level |
-| `HTTP_HOST`, `HTTP_PORT` | no | Bind address and port for the Fastify server |
-| `INDEXER_ENABLED` | no | Toggle the poller loop |
-| `SHUTDOWN_TIMEOUT_MS` | no | Graceful shutdown budget |
-| `STELLAR_EVENT_PAGE_SIZE` | no | Page size for Soroban `getEvents` reads |
-| `STELLAR_POLL_INTERVAL_MS` | no | Idle interval for the Stellar watcher |
-| `EVM_POLL_INTERVAL_MS` | no | Idle interval for the EVM watcher |
-| `EVM_LOG_RANGE` | no | Maximum block range per EVM log query |
+| Variable                    | Required | Purpose                                                                     |
+| --------------------------- | -------- | --------------------------------------------------------------------------- |
+| `DATABASE_URL`              | yes      | Postgres connection string (compose publishes on 5433)                      |
+| `REDIS_URL`                 | yes      | Redis connection string (compose publishes on 6380)                         |
+| `HYPERION_NETWORK`          | yes      | `testnet` or `mainnet`; selects which half of the chain registry is in play |
+| `HYPERION_DEPLOYMENTS_FILE` | yes      | Deployment record written by the contracts repo                             |
+| `NODE_ENV`                  | no       | `development`, `test`, or `production`                                      |
+| `LOG_LEVEL`                 | no       | Pino log level                                                              |
+| `HTTP_HOST`, `HTTP_PORT`    | no       | Bind address and port for the Fastify server                                |
+| `INDEXER_ENABLED`           | no       | Toggle the poller loop                                                      |
+| `SHUTDOWN_TIMEOUT_MS`       | no       | Graceful shutdown budget                                                    |
+| `STELLAR_EVENT_PAGE_SIZE`   | no       | Page size for Soroban `getEvents` reads                                     |
+| `STELLAR_POLL_INTERVAL_MS`  | no       | Idle interval for the Stellar watcher                                       |
+| `EVM_POLL_INTERVAL_MS`      | no       | Idle interval for the EVM watcher                                           |
+| `EVM_LOG_RANGE`             | no       | Maximum block range per EVM log query                                       |
 
 ## Tests
 
