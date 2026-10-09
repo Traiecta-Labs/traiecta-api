@@ -4,7 +4,7 @@
  * Verifies that the four keeper jobs correctly inspect database state,
  * format operational targets, and handle dry-run execution safely without keys.
  */
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { loadConfig } from "../../src/config/config.js";
 import { processClaimSettlement } from "../../src/keeper/jobs/claims.js";
@@ -216,6 +216,59 @@ describe("keeper upkeep jobs", () => {
       q.text.includes("INSERT INTO inbound_delivery"),
     );
     expect(inboundInsert).toBeUndefined();
+  });
+
+  it("leaves a transfer unrelayed when no attestation can be resolved", async () => {
+    const db = new MockDb({
+      outbound_transfer: [
+        {
+          id: "13",
+          origin_chain: "sepolia",
+          destination_chain: "stellar-testnet",
+          route: 0,
+          nonce: "45",
+          sender: "0x1111",
+          token: "CAS...",
+          gross_amount: "5000",
+          fee: "15",
+          net_amount: "4985",
+          destination: "GBB...",
+          origin_tx: "0xunresolvable",
+          rail_reference: null,
+          rail_status: "complete",
+        },
+      ],
+    });
+
+    // Iris answering with a non-OK body is the production shape of "no attestation yet". With no
+    // provider payload and no stored rail_reference, nothing can be resolved and the transfer must
+    // stay where it is rather than be handed a fabricated payload.
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(new Response("not found", { status: 404 }));
+
+    try {
+      const result = await processRailSecondStep(
+        { db, config, logger },
+        {
+          stellarRpcProvider: {
+            submitTransaction: () =>
+              Promise.resolve({ status: "SUCCESS" as const, hash: "should-not-run", ledger: 1n }),
+          },
+        },
+      );
+
+      expect(result.relayed).toBe(0);
+      expect(result.pending).toBe(1);
+      expect(result.dryRun).toBe(false);
+
+      const inboundInsert = db.executedQueries.find((q) =>
+        q.text.includes("INSERT INTO inbound_delivery"),
+      );
+      expect(inboundInsert).toBeUndefined();
+    } finally {
+      fetchSpy.mockRestore();
+    }
   });
 
   it("submits Stellar second-step execution with receive_message and records delivery", async () => {
