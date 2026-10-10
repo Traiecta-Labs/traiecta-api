@@ -45,7 +45,6 @@
     "viem": "^2.57.2"
   },
   "devDependencies": {
-    "@types/ioredis": "^4.28.10",
     "@types/node": "^24.19.0",
     "@types/pg": "^8.15.6",
     "eslint": "^10.11.0",
