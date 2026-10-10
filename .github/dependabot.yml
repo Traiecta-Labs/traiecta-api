@@ -2,6 +2,8 @@
 #
 # Runs weekly on Monday mornings UTC. Grouped dev dependencies minimize noise while ensuring
 # major framework updates (Fastify, BullMQ, viem, stellar-sdk) can be evaluated individually.
+# The github-actions entry keeps the CI supply chain fresh too: the workflow pins its actions to
+# commit SHAs, and without an update stream those pins would silently age.
 
 version: 2
 
@@ -30,3 +32,19 @@ updates:
         patterns:
           - "pino"
           - "pino-pretty"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "07:00"
+      timezone: Etc/UTC
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "ci"
+      include: scope
+    groups:
+      github-actions:
+        patterns:
+          - "actions/*"
