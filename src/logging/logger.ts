@@ -12,7 +12,7 @@
  * without this the first log line about a real transfer takes the process down.
  */
 import { pino, stdSerializers } from "pino";
-import type { Logger } from "pino";
+import type { DestinationStream, Logger, LoggerOptions } from "pino";
 
 import type { AppConfig } from "../config/config.js";
 
@@ -39,8 +39,8 @@ const REDACTED_PATHS = [
   "config.redisUrl",
 ];
 
-export function createLogger(config: AppConfig): Logger {
-  return pino({
+export function createLogger(config: AppConfig, destination?: DestinationStream): Logger {
+  const options: LoggerOptions = {
     level: config.logLevel,
     // The service name is on every line because the keeper and the API will run as separate
     // processes against the same aggregator before long.
@@ -67,7 +67,12 @@ export function createLogger(config: AppConfig): Logger {
           },
         }
       : {}),
-  });
+  };
+
+  // The destination is a test seam. Production calls this with one argument and pino writes to
+  // stdout; a unit test hands over a stream so it can read the redaction and the bigint rendering
+  // back directly rather than inferring them from a downstream test.
+  return destination === undefined ? pino(options) : pino(options, destination);
 }
 
 /**
