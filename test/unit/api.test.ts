@@ -264,8 +264,8 @@ describe("REST API endpoints", () => {
       indexer_cursor: [
         {
           chain_key: "sepolia",
-          cursor_block: "7890",
-          cursor_hash: "0xhash",
+          last_processed: "7890",
+          last_processed_hash: "0xhash",
           updated_at: new Date("2026-10-07T12:00:00Z"),
         },
       ],
@@ -290,6 +290,8 @@ describe("REST API endpoints", () => {
     expect(metrics.claims.unsettled).toBe(2);
     expect(metrics.railAttestations.attested).toBe(15);
     expect(metrics.cursors).toHaveLength(1);
+    expect(metrics.cursors[0].block).toBe("7890");
+    expect(metrics.cursors[0].hash).toBe("0xhash");
   });
 
   it("serves transfer status by transfer id", async () => {

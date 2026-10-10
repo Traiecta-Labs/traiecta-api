@@ -6,7 +6,7 @@
 import type { FastifyInstance, FastifyReply } from "fastify";
 
 import type { Database } from "../../db/pool.js";
-import { integer, text, textOrNull } from "../../db/rows.js";
+import { bigintOf, integer, text, textOrNull } from "../../db/rows.js";
 import type { ServerDeps } from "../server.js";
 
 export function registerMetricsRoutes(app: FastifyInstance, deps: ServerDeps): void {
@@ -45,14 +45,16 @@ export function registerMetricsRoutes(app: FastifyInstance, deps: ServerDeps): v
       railStatusCounts[text(row, "status")] = integer(row, "count");
     }
 
-    // 5. Watcher cursor positions
+    // 5. Watcher cursor positions. Column names must match the migrations: the cursor table has
+    // `last_processed` and `last_processed_hash`, not `cursor_block`/`cursor_hash`, and reading a
+    // column that was never created is a 42703 that turns this endpoint into a 500.
     const cursorResult = await db.query(
-      "SELECT chain_key, cursor_block, cursor_hash, updated_at FROM indexer_cursor",
+      "SELECT chain_key, last_processed, last_processed_hash, updated_at FROM indexer_cursor",
     );
     const cursors = cursorResult.rows.map((row) => ({
       chain: text(row, "chain_key"),
-      block: text(row, "cursor_block"),
-      hash: textOrNull(row, "cursor_hash"),
+      block: bigintOf(row, "last_processed").toString(),
+      hash: textOrNull(row, "last_processed_hash"),
       updatedAt: new Date(row.updated_at as string | number | Date).toISOString(),
     }));
 
