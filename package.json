@@ -14,9 +14,9 @@
     "node": ">=20.11"
   },
   "scripts": {
-    "dev": "node --watch --experimental-strip-types src/main.ts",
-    "build": "tsc -p tsconfig.build.json",
-    "start": "node dist/main.js",
+    "dev": "node api.js && node --watch --experimental-strip-types src/main.ts",
+    "build": "node api.js && tsc -p tsconfig.build.json",
+    "start": "node api.js && node dist/main.js",
     "migrate": "node-pg-migrate --envPath .env --migrations-dir migrations --migrations-table pgmigrations",
     "migrate:up": "npm run migrate -- up",
     "migrate:down": "npm run migrate -- down",
@@ -36,7 +36,7 @@
     "@hyperion/protocol": "file:hyperion-protocol-0.1.0.tgz",
     "@stellar/stellar-sdk": "^17.2.1",
     "bullmq": "^6.3.11",
-    "fastify": "^5.12.5",
+    "fastify": "^5.12.7",
     "ioredis": "^6.0.0",
     "node-pg-migrate": "^9.0.0",
     "pg": "^8.16.3",
